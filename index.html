@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Data Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <header id="global-exam-header" class="hidden">
+        <h2 id="display-exam-name">Exam: Loading...</h2>
+    </header>
+
+    <main class="container">
+        
+        <section id="login-screen" class="card">
+            <div class="login-header">
+                <i class="fa-solid fa-shield-halved login-icon"></i>
+                <h2>System Authentication</h2>
+            </div>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required placeholder="Enter username">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Log In</button>
+            </form>
+        </section>
+
+        <section id="entry-screen" class="card hidden">
+            <div class="screen-header">
+                <span><i class="fa-solid fa-user-pen"></i> Operator Mode</span>
+                <button id="btn-user-logout" class="btn btn-danger btn-sm"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+
+            <div class="input-group qp-group">
+                <label for="entry-qp-code">CURRENT QP CODE</label>
+                <input type="text" id="entry-qp-code" placeholder="Type QP Code Here" class="input-bold">
+            </div>
+
+            <div class="entry-fields-row">
+                <div class="input-group">
+                    <label for="entry-ins-code">INSTITUTE CODE</label>
+                    <input type="number" id="entry-ins-code" inputmode="numeric" pattern="[0-9]*" placeholder="3-Digit" class="input-bold text-center">
+                </div>
+                <div class="input-group">
+                    <label for="entry-paper-count">PAPER COUNT</label>
+                    <input type="number" id="entry-paper-count" inputmode="numeric" pattern="[0-9]*" placeholder="Count" class="input-bold text-center">
+                </div>
+            </div>
+
+            <div class="navigation-arrows">
+                <button id="btn-arrow-left" class="btn btn-nav"><i class="fa-solid fa-arrow-left"></i> LEFT</button>
+                <button id="btn-arrow-right" class="btn btn-nav btn-success">RIGHT <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+
+            <div class="center-action-wrapper">
+                <button id="btn-complete-qp" class="btn btn-primary btn-lg btn-block">
+                    <i class="fa-solid fa-folder-plus"></i> Complete QP & Start Fresh QP
+                </button>
+            </div>
+        </section>
+
+        <section id="admin-screen" class="card hidden">
+            <div class="screen-header">
+                <span><i class="fa-solid fa-gauge-high"></i> Admin Dashboard</span>
+                <div class="admin-actions-top">
+                    <button id="btn-admin-settings" class="btn btn-secondary btn-sm"><i class="fa-solid fa-gear"></i> Settings</button>
+                    <button id="btn-admin-logout" class="btn btn-danger btn-sm"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-label">Total Unique QP Codes</span>
+                    <span id="metric-total-qp" class="metric-value">0</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Total Papers Received</span>
+                    <span id="metric-total-papers" class="metric-value">0</span>
+                </div>
+            </div>
+
+            <div class="table-control-header">
+                <h3>Live Status Summary</h3>
+                <button id="btn-export-master-excel" class="btn btn-excel btn-sm">
+                    <i class="fa-solid fa-file-excel"></i> Export Master Excel
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table id="main-dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>QP CODE</th>
+                            <th>TOTAL INST.</th>
+                            <th>TOTAL PAPERS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboard-table-body">
+                        </tbody>
+                </table>
+            </div>
+
+            <div id="drilldown-view" class="drilldown-box hidden">
+                <div class="table-control-header">
+                    <h4>Breakdown for QP: <span id="drilldown-qp-title" class="text-highlight">None</span></h4>
+                    <button id="btn-export-qp-excel" class="btn btn-excel btn-xs">
+                        <i class="fa-solid fa-file-arrow-down"></i> Export This QP
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table id="drilldown-data-table">
+                        <thead>
+                            <tr>
+                                <th>INSTITUTE CODE</th>
+                                <th>PAPER COUNT</th>
+                                <th>ENTRY DATE & TIME</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drilldown-table-body">
+                            </tbody>
+                        <tfoot>
+                            <tr id="drilldown-table-footer">
+                                </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="settings-panel" class="card hidden">
+            <div class="screen-header">
+                <h3><i class="fa-solid fa-sliders"></i> Control Management</h3>
+                <button id="btn-close-settings" class="btn btn-secondary btn-sm">Back</button>
+            </div>
+
+            <div class="settings-group">
+                <label for="settings-exam-name">Edit Active Exam Name String</label>
+                <div class="inline-input-action">
+                    <input type="text" id="settings-exam-name" placeholder="Enter New Exam Title">
+                    <button id="btn-save-exam-name" class="btn btn-success">Update</button>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label>Create New Data Entry Operator Login</label>
+                <input type="text" id="new-user-id" placeholder="New Operator Username" class="margin-bottom-sm">
+                <input type="password" id="new-user-pass" placeholder="New Operator Password" class="margin-bottom-sm">
+                <button id="btn-create-user" class="btn btn-primary btn-block">Register New User Account</button>
+            </div>
+
+            <hr class="divider">
+
+            <div class="settings-group danger-zone">
+                <h4>System Hard Reset Zone</h4>
+                <p>Ensure you have downloaded the Master Excel sheet prior to execution. This completely purges database indices.</p>
+                <button id="btn-clear-system-data" class="btn btn-danger btn-block">
+                    <i class="fa-solid fa-trash-can"></i> CLEAR DATA FOR NEXT EXAM
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="duplicate-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <i class="fa-solid fa-triangle-exclamation modal-alert-icon"></i>
+                <h3>Duplicate Institute Detected</h3>
+            </div>
+            <div class="modal-body">
+                <p>An entry record already exists for Institute Code <strong id="dup-modal-ins" class="text-dark">---</strong> inside Question Paper folder <strong id="dup-modal-qp" class="text-dark">---</strong>.</p>
+                
+                <div class="historical-data-box">
+                    <h5>Existing Active Log Records:</h5>
+                    <ul id="dup-modal-history-list">
+                        </ul>
+                </div>
+                
+                <p class="question-prompt">The operator has captured a value of <strong id="dup-modal-new-count" class="text-highlight">---</strong> papers. Select the correct database execution course:</p>
+            </div>
+            <div class="modal-actions-vertical">
+                <button id="btn-modal-add-bundle" class="btn btn-success btn-lg">
+                    <i class="fa-solid fa-layer-group"></i> 1. ADD AS NEW BUNDLE
+                </button>
+                <button id="btn-modal-overwrite" class="btn btn-warning">
+                    <i class="fa-solid fa-pen-to-square"></i> 2. OVERWRITE PAST ENTRY
+                </button>
+                <button id="btn-modal-cancel" class="btn btn-secondary">
+                    <i class="fa-solid fa-ban"></i> 3. CANCEL / GO BACK
+                </button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
