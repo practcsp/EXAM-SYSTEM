@@ -6,21 +6,25 @@
     <title>Exam Data Management System</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS Library for Excel Export Generation -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    
+    <!-- CRUCIAL: Loaded once as a module to handle imports properly and prevent login loops -->
+    <script type="module" src="app.js"></script>
 </head>
 <body>
 
     <header id="global-exam-header" class="hidden">
+        <!-- Dynamically renders ONLY your custom typed exam title -->
         <h2 id="display-exam-name">Loading...</h2>
     </header>
 
     <main class="container">
         
+        <!-- 1. AUTHENTICATION INTERFACE -->
         <section id="login-screen" class="card">
             <div class="login-header">
                 <i class="fa-solid fa-shield-halved login-icon"></i>
-                <h2>WELCOME TO PAPER RECEIVING PORTAL</h2>
+                <h2>System Authentication</h2>
             </div>
             <form id="login-form">
                 <div class="input-group">
@@ -35,6 +39,7 @@
             </form>
         </section>
 
+        <!-- 2. DATA ENTRY OPERATOR PANEL -->
         <section id="entry-screen" class="card hidden">
             <div class="screen-header">
                 <span><i class="fa-solid fa-user-pen"></i> Operator Mode</span>
@@ -46,6 +51,7 @@
                 <input type="text" id="entry-qp-code" placeholder="Type QP Code Here" class="input-bold">
             </div>
 
+            <!-- Vertically Stacked Form Group Inputs to Align Aligned Edge-to-Edge -->
             <div class="entry-fields-vertical" style="display: flex; flex-direction: column; gap: 15px; width: 100%; box-sizing: border-box; margin-bottom: 20px;">
                 <div class="input-group" style="width: 100%;">
                     <label for="entry-ins-code" style="display: block; margin-bottom: 5px; text-align: left;">INSTITUTE CODE</label>
@@ -69,6 +75,7 @@
             </div>
         </section>
 
+        <!-- 3. CENTRAL ADMINISTRATIVE MONITOR -->
         <section id="admin-screen" class="card hidden">
             <div class="screen-header">
                 <span><i class="fa-solid fa-gauge-high"></i> Admin Dashboard</span>
@@ -101,7 +108,7 @@
                     <thead>
                         <tr>
                             <th>QP CODE</th>
-                            <th>TOTAL INSTITUTES</th>
+                            <th>TOTAL INST.</th>
                             <th>TOTAL PAPERS</th>
                         </tr>
                     </thead>
@@ -137,6 +144,7 @@
             </div>
         </section>
 
+        <!-- 4. SYSTEM CONTROL PANEL -->
         <section id="settings-panel" class="card hidden">
             <div class="screen-header">
                 <h3><i class="fa-solid fa-sliders"></i> Control Management</h3>
@@ -171,6 +179,7 @@
 
     </main>
 
+    <!-- MULTI-BUNDLE RECORD DUPLICATION WINDOW -->
     <div id="duplicate-modal-overlay" class="modal-overlay hidden">
         <div class="modal-box">
             <div class="modal-header">
@@ -186,7 +195,7 @@
                     </ul>
                 </div>
                 
-                <p class="question-prompt">The operator has captured a value of <strong id="dup-modal-new-count" class="text-highlight">---</strong> papers. Select the correct database execution course:</p>
+                <p class="question-prompt">The operator has captured a value of <strong id="dup-modal-new-count" class="text-highlight">---</strong> papers. Select the correct database course:</p>
             </div>
             <div class="modal-actions-vertical">
                 <button id="btn-modal-add-bundle" class="btn btn-success btn-lg">
@@ -201,6 +210,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js"></script>
+
 </body>
 </html>
