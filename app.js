@@ -17,7 +17,6 @@ const firebaseConfig = {
   appId: "1:563717623538:web:bfc99999ea440fc1338a6b"
 };
 
-// Guard Rule: Halt execution if the operator forgot to swap out the API placeholders
 const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
 let app, db;
 
@@ -26,7 +25,7 @@ if (isConfigured) {
     db = getFirestore(app);
 }
 
-// Global System Infrastructure Framework Trackers
+// Global System Trackers
 let currentExamName = "Loading...";
 let currentUserRole = null;
 let liveDatabaseCache = {}; 
@@ -48,12 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function startRealTimeCloudSync() {
-    // Monitor System Global Environment Variables
     onSnapshot(doc(db, "system", "config"), (docSnapshot) => {
         if (docSnapshot.exists()) {
             const data = docSnapshot.data();
             currentExamName = data.examName || "No Exam Name Set";
-            // Clean dynamic text matching fix applied here directly
             document.getElementById("display-exam-name").innerText = currentExamName;
             document.getElementById("settings-exam-name").value = currentExamName;
         } else {
@@ -64,7 +61,6 @@ function startRealTimeCloudSync() {
         }
     });
 
-    // Mirror whole collection state metrics into structural application lookup tables
     onSnapshot(collection(db, "bundles"), (querySnapshot) => {
         liveDatabaseCache = {};
         querySnapshot.forEach((docRecord) => {
@@ -92,11 +88,10 @@ function startRealTimeCloudSync() {
    AUTHENTICATION PROFILE SECURITY PROCESSING LOGIC
    ========================================================================== */
 async function processSystemLogin(e) {
-    // 1. Permanently breaks the standard browser page refresh cycle loop
     e.preventDefault();
 
     if (!isConfigured) {
-        alert("Configuration Blocked: Open 'app.js' in VS Code and paste your real Google Firebase config object profile keys at line 10!");
+        alert("Configuration Blocked: Paste your real Google Firebase config object profile keys at the top of app.js!");
         return;
     }
 
@@ -117,7 +112,7 @@ async function processSystemLogin(e) {
                     navigateToScreen("entry");
                 }
             } else {
-                alert("Invalid account credentials profile. Check login name and password.");
+                alert("Invalid account credentials. Check login name and password.");
             }
         }
     } catch (err) {
@@ -145,7 +140,7 @@ async function handleRightArrowProcess() {
 
     const count = parseInt(countStr, 10);
 
-    // FIX 1, 2 & 5: If navigating past history, right arrow UPDATES the record and clears fields.
+    // FIX 1, 2 & 5: Editing past records
     if (sessionIndex >= 0 && sessionIndex < sessionRecords.length) {
         const record = sessionRecords[sessionIndex];
         try {
@@ -156,18 +151,18 @@ async function handleRightArrowProcess() {
             });
             record.count = count;
             record.time = currentTimestamp;
-            alert("Data updated successfully!"); // Feedback message
+            alert("Data updated successfully!"); 
         } catch (e) {
             alert("Cloud write fault: " + e.message);
             return;
         }
         
-        sessionIndex = sessionRecords.length; // Reset pointer to allow new entries
-        clearEntryInputFields(); // Clears Ins & Count, leaves QP
+        sessionIndex = sessionRecords.length; 
+        clearEntryInputFields(); 
         return;
     }
 
-    // Checking for duplicates before saving a brand new entry
+    // Checking duplicates for brand new records
     if (liveDatabaseCache[sessionQP] && liveDatabaseCache[sessionQP][ins] && liveDatabaseCache[sessionQP][ins].length > 0) {
         triggerDuplicateModalPopup(ins, count);
     } else {
@@ -191,8 +186,8 @@ async function commitEntryToCloud(ins, count) {
         sessionRecords.push({ ins: ins, count: count, time: timestamp, docId: uniqueDocId });
         sessionIndex = sessionRecords.length;
         
-        alert("Data stored successfully!"); // FIX 5: Success Message
-        clearEntryInputFields();            // FIX 1: Clears Ins & Count, leaves QP
+        alert("Data stored successfully!"); 
+        clearEntryInputFields(); 
     } catch (err) {
         alert("Cloud transaction rejected: " + err.message);
     }
@@ -201,7 +196,7 @@ async function commitEntryToCloud(ins, count) {
 function handleLeftArrowNavigation() {
     const targetQpInput = document.getElementById("entry-qp-code").value.trim().toUpperCase();
 
-    // FIX 2: If starting fresh, pull past database entries into the fields for editing!
+    // FIX 2: Pulling history directly into inputs
     if (sessionRecords.length === 0) {
         if (!targetQpInput) {
             alert("Please enter a CURRENT QP CODE first to view and edit past data.");
@@ -212,7 +207,6 @@ function handleLeftArrowNavigation() {
             sessionQP = targetQpInput;
             document.getElementById("entry-qp-code").disabled = true;
             
-            // Load live history into the navigation tracker
             for (let insKey in liveDatabaseCache[targetQpInput]) {
                 liveDatabaseCache[targetQpInput][insKey].forEach((b) => {
                     sessionRecords.push({ ins: insKey, count: b.count, time: b.time, docId: b.id });
@@ -225,7 +219,6 @@ function handleLeftArrowNavigation() {
         }
     }
     
-    // Move backwards through the records and populate the editable text boxes
     if (sessionIndex > 0) {
         sessionIndex--;
         const targetRecord = sessionRecords[sessionIndex];
@@ -272,7 +265,7 @@ async function executeDuplicateResolution(choice) {
             });
             sessionRecords.push({ ins: ins, count: count, time: timestamp, docId: uniqueDocId });
             sessionIndex = sessionRecords.length;
-            alert("Data stored successfully as an additional bundle!"); // FIX 5
+            alert("Data stored successfully as an additional bundle!"); 
         } 
         else if (choice === "overwrite") {
             const batch = writeBatch(db);
@@ -286,10 +279,10 @@ async function executeDuplicateResolution(choice) {
             await batch.commit();
             sessionRecords.push({ ins: ins, count: count, time: timestamp, docId: uniqueDocId });
             sessionIndex = sessionRecords.length;
-            alert("Past entries cleanly overwritten. Data updated successfully!"); // FIX 5
+            alert("Past entries cleanly overwritten. Data updated successfully!"); 
         }
         
-        // FIX 3: Ensures the modal hides and screen resets gracefully
+        // FIX 3: Resetting the screen after duplicate logic completes
         document.getElementById("duplicate-modal-overlay").classList.add("hidden");
         clearEntryInputFields(); 
         pendingDuplicatePayload = null;
@@ -338,7 +331,7 @@ async function createNewOperatorAccount() {
             if (configDoc.exists()) {
                 const currentUsers = configDoc.data().users;
                 
-                // FIX 4: Checks if user already exists to provide exact feedback
+                // FIX 4: Admin alerts
                 const isExisting = !!currentUsers[u];
                 
                 currentUsers[u] = p;
@@ -350,7 +343,6 @@ async function createNewOperatorAccount() {
                     alert(`Success: New operator account "${u}" has been created.`);
                 }
                 
-                // Clear fields after success
                 document.getElementById("new-user-id").value = "";
                 document.getElementById("new-user-pass").value = "";
             }
@@ -361,6 +353,7 @@ async function createNewOperatorAccount() {
         alert("Please enter both a username and a password first.");
     }
 }
+
 /* ==========================================================================
    ADMIN DATA GRID & DRILLDOWN UI GENERATORS
    ========================================================================== */
@@ -521,7 +514,11 @@ function initializeDOMEvents() {
     });
     document.getElementById("btn-modal-add-bundle").addEventListener("click", () => executeDuplicateResolution("add"));
     document.getElementById("btn-modal-overwrite").addEventListener("click", () => executeDuplicateResolution("overwrite"));
-    document.getElementById("btn-modal-cancel").addEventListener("click", () => document.getElementById("duplicate-modal-overlay").classList.add("hidden"));
+    document.getElementById("btn-modal-cancel").addEventListener("click", () => {
+        document.getElementById("duplicate-modal-overlay").classList.add("hidden");
+	clearEntryInputFields();
+        pendingDuplicatePayload = null;
+    });
     document.getElementById("btn-save-exam-name").addEventListener("click", async () => {
         const title = document.getElementById("settings-exam-name").value.trim();
         if(title) {
