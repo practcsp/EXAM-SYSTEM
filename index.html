@@ -11,7 +11,7 @@
 <body>
 
     <header id="global-exam-header" class="hidden">
-        <h2 id="display-exam-name">Exam: Loading...</h2>
+        <h2 id="display-exam-name">Loading...</h2>
     </header>
 
     <main class="container">
@@ -19,7 +19,7 @@
         <section id="login-screen" class="card">
             <div class="login-header">
                 <i class="fa-solid fa-shield-halved login-icon"></i>
-                <h2>System Authentication</h2>
+                <h2>WELCOME TO PAPER RECEIVING PORTAL</h2>
             </div>
             <form id="login-form">
                 <div class="input-group">
@@ -45,14 +45,14 @@
                 <input type="text" id="entry-qp-code" placeholder="Type QP Code Here" class="input-bold">
             </div>
 
-            <div class="entry-fields-row">
-                <div class="input-group">
-                    <label for="entry-ins-code">INSTITUTE CODE</label>
-                    <input type="number" id="entry-ins-code" inputmode="numeric" pattern="[0-9]*" placeholder="3-Digit" class="input-bold text-center">
+            <div class="entry-fields-vertical" style="display: flex; flex-direction: column; gap: 15px; width: 100%; box-sizing: border-box; margin-bottom: 20px;">
+                <div class="input-group" style="width: 100%;">
+                    <label for="entry-ins-code" style="display: block; margin-bottom: 5px; text-align: left;">INSTITUTE CODE</label>
+                    <input type="number" id="entry-ins-code" inputmode="numeric" pattern="[0-9]*" placeholder="3-Digit" class="input-bold text-center" style="width: 100%; box-sizing: border-box;">
                 </div>
-                <div class="input-group">
-                    <label for="entry-paper-count">PAPER COUNT</label>
-                    <input type="number" id="entry-paper-count" inputmode="numeric" pattern="[0-9]*" placeholder="Count" class="input-bold text-center">
+                <div class="input-group" style="width: 100%;">
+                    <label for="entry-paper-count" style="display: block; margin-bottom: 5px; text-align: left;">PAPER COUNT</label>
+                    <input type="number" id="entry-paper-count" inputmode="numeric" pattern="[0-9]*" placeholder="Count" class="input-bold text-center" style="width: 100%; box-sizing: border-box;">
                 </div>
             </div>
 
@@ -100,12 +100,12 @@
                     <thead>
                         <tr>
                             <th>QP CODE</th>
-                            <th>TOTAL INST.</th>
+                            <th>TOTAL INSTITUTES</th>
                             <th>TOTAL PAPERS</th>
                         </tr>
                     </thead>
                     <tbody id="dashboard-table-body">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
 
@@ -126,10 +126,10 @@
                             </tr>
                         </thead>
                         <tbody id="drilldown-table-body">
-                            </tbody>
+                        </tbody>
                         <tfoot>
                             <tr id="drilldown-table-footer">
-                                </tr>
+                            </tr>
                         </tfoot>
                     </table>
                 </div>
@@ -182,7 +182,7 @@
                 <div class="historical-data-box">
                     <h5>Existing Active Log Records:</h5>
                     <ul id="dup-modal-history-list">
-                        </ul>
+                    </ul>
                 </div>
                 
                 <p class="question-prompt">The operator has captured a value of <strong id="dup-modal-new-count" class="text-highlight">---</strong> papers. Select the correct database execution course:</p>
@@ -200,6 +200,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js"></script>
+
 </body>
 </html>

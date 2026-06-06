@@ -48,7 +48,8 @@ function startRealTimeCloudSync() {
         if (docSnapshot.exists()) {
             const data = docSnapshot.data();
             currentExamName = data.examName || "No Exam Name Set";
-            document.getElementById("display-exam-name").innerText = `Exam Name: ${currentExamName}`;
+            // FIXED: Displays ONLY your custom typed exam name without any prepended text
+            document.getElementById("display-exam-name").innerText = currentExamName;
             document.getElementById("settings-exam-name").value = currentExamName;
         } else {
             // Seed defaults into database automatically if it's completely fresh
@@ -183,9 +184,31 @@ async function commitEntryToCloud(ins, count) {
     }
 }
 
+// FIXED: Removed the local session block message box entirely
 function handleLeftArrowNavigation() {
+    const targetQpInput = document.getElementById("entry-qp-code").value.trim().toUpperCase();
+
+    // Fallback: If no local active history array exists yet but they typed a QP Code, check the live cloud cache structure instead
     if (sessionRecords.length === 0) {
-        alert("No logs captured inside this active session folder context.");
+        if (!targetQpInput) {
+            alert("Please enter a CURRENT QP CODE first to pull live history logs.");
+            return;
+        }
+        
+        if (liveDatabaseCache[targetQpInput]) {
+            let totalBundlesFound = 0;
+            let summaryMessage = `Live Cloud Logs for QP [${targetQpInput}]:\n\n`;
+            
+            for (let insKey in liveDatabaseCache[targetQpInput]) {
+                liveDatabaseCache[targetQpInput][insKey].forEach((b) => {
+                    totalBundlesFound++;
+                    summaryMessage += `• Inst ${insKey}: ${b.count} Papers (${b.time})\n`;
+                });
+            }
+            alert(summaryMessage);
+        } else {
+            alert(`No live entries found in the database yet for QP Code: ${targetQpInput}`);
+        }
         return;
     }
     
