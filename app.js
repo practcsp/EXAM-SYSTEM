@@ -115,23 +115,51 @@ async function processSystemLogin(e) {
     }
 }
 
-/* ==========================================================================
-   DATA FIELD INPUT ARROW CONTROLLERS
-   ========================================================================== */
-async function handleRightArrowProcess() {
-    const qp = document.getElementById("entry-qp-code").value.trim().toUpperCase();
-    const ins = document.getElementById("entry-ins-code").value.trim();
-    const countStr = document.getElementById("entry-paper-count").value.trim();
 
-    if (!qp || !ins || !countStr) {
-        alert("Validation warning: Complete all fields before submitting.");
+/* ==========================================================================
+   FIXED AUTHENTICATION LOGIC - PREVENTS LOGIN LOOP
+   ========================================================================== */
+async function processSystemLogin(e) {
+    // 1. Strictly prevent the browser from reloading the page on submit
+    e.preventDefault(); 
+    
+    const u = document.getElementById("username").value.trim();
+    const p = document.getElementById("password").value;
+
+    // Safety check: Alert if API keys are missing before making a network call
+    if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+        alert("Configuration Error: Please paste your actual Google Firebase Keys into app.js before logging in!");
         return;
     }
 
-    if (!sessionQP) {
-        sessionQP = qp;
-        document.getElementById("entry-qp-code").disabled = true;
+    try {
+        // 2. Fetch the secure user directory from Google Firestore
+        const configDoc = await getDoc(doc(db, "system", "config"));
+        
+        if (configDoc.exists()) {
+            const users = configDoc.data().users;
+            
+            // 3. Verify credentials and route to the correct screen layout
+            if (users[u] && users[u] === p) {
+                if (u === "admin") {
+                    currentUserRole = "admin";
+                    navigateToScreen("admin");
+                } else {
+                    currentUserRole = "user";
+                    resetOperatorSession();
+                    navigateToScreen("entry"); // Opens your newly aligned vertical input screen
+                }
+            } else {
+                alert("Invalid account credentials! Please verify username and password.");
+            }
+        } else {
+            alert("Database Error: Global configuration document missing in Firestore.");
+        }
+    } catch (err) {
+        console.error("Login Error Stack:", err);
+        alert("Authentication network link failure: " + err.message + "\n\n(Check if your laptop firewall is blocking Google Firebase or if keys are incorrect.)");
     }
+}
 
     const count = parseInt(countStr, 10);
 
