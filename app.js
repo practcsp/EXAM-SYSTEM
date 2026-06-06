@@ -2,14 +2,12 @@
    EXAM DATA SYSTEM ENGINE - LIVE GOOGLE CLOUD ARCHITECTURE (FIRESTORE)
    ========================================================================== */
 
-// 1. IMPORT FIREBASE SERVICES FROM THE GOOGLE CDN NETWORK NETWORK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-    getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, writeBatch, query, orderBy 
+    getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, writeBatch 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 2. PASTE YOUR WEBLINK CONFIGURATION KEYS HERE DIRECTLY FROM GOOGLE SITE
-// Replace this placeholder below with your actual config block:
+// --- PASTE YOUR LIVE PROJECT GOOGLE WEB APP CONFIGURATION KEY BLOCK HERE ---
 const firebaseConfig = {
   apiKey: "AIzaSyCNFLz8yJ0biCyMQzq4qKbrDAG5YelOK64",
   authDomain: "exam-paper-data-system.firebaseapp.com",
@@ -17,42 +15,48 @@ const firebaseConfig = {
   storageBucket: "exam-paper-data-system.firebasestorage.app",
   messagingSenderId: "563717623538",
   appId: "1:563717623538:web:bfc99999ea440fc1338a6b"
-};
+}
 
-// Initialize Google Core Cloud Engine
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Guard Rule: Halt execution if the operator forgot to swap out the API placeholders
+const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
+let app, db;
 
-// Global State Trackers
+if (isConfigured) {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+}
+
+// Global System Infrastructure Framework Trackers
 let currentExamName = "Loading...";
 let currentUserRole = null;
 let liveDatabaseCache = {}; 
 
-// Operator Data Navigation Session Trackers
 let sessionQP = "";
 let sessionRecords = []; 
 let sessionIndex = -1;   
 
 /* ==========================================================================
-   APP STARTUP & REAL-TIME LISTENERS SETUP
+   APP STARTUP & DATABASE CONNECTION INITIALIZERS
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
     initializeDOMEvents();
-    startRealTimeCloudSync();
+    if (isConfigured) {
+        startRealTimeCloudSync();
+    } else {
+        console.warn("Application offline: Real-Time Sync deactivated. Paste Google credentials.");
+    }
 });
 
-// Create a persistent connection to the cloud database
 function startRealTimeCloudSync() {
-    // Listen for Real-Time global configuration parameters (Exam Title & Auth Profiles)
+    // Monitor System Global Environment Variables
     onSnapshot(doc(db, "system", "config"), (docSnapshot) => {
         if (docSnapshot.exists()) {
             const data = docSnapshot.data();
             currentExamName = data.examName || "No Exam Name Set";
-            // FIXED: Displays ONLY your custom typed exam name without any prepended text
+            // Clean dynamic text matching fix applied here directly
             document.getElementById("display-exam-name").innerText = currentExamName;
             document.getElementById("settings-exam-name").value = currentExamName;
         } else {
-            // Seed defaults into database automatically if it's completely fresh
             setDoc(doc(db, "system", "config"), {
                 examName: "Summer Board Exams 2026",
                 users: { "user1": "123", "admin": "123" }
@@ -60,7 +64,7 @@ function startRealTimeCloudSync() {
         }
     });
 
-    // Listen for real-time changes across all Question Paper bundle entries
+    // Mirror whole collection state metrics into structural application lookup tables
     onSnapshot(collection(db, "bundles"), (querySnapshot) => {
         liveDatabaseCache = {};
         querySnapshot.forEach((docRecord) => {
@@ -74,11 +78,10 @@ function startRealTimeCloudSync() {
             liveDatabaseCache[qp][ins].push({
                 count: data.paperCount,
                 time: data.timestamp,
-                id: docRecord.id // Firestore document reference key tracking row identities
+                id: docRecord.id 
             });
         });
         
-        // Refresh the admin dashboard view instantly behind the scenes if open
         if (currentUserRole === "admin") {
             renderAdminDashboard();
         }
@@ -86,10 +89,17 @@ function startRealTimeCloudSync() {
 }
 
 /* ==========================================================================
-   AUTHENTICATION LOGIC
+   AUTHENTICATION PROFILE SECURITY PROCESSING LOGIC
    ========================================================================== */
 async function processSystemLogin(e) {
+    // 1. Permanently breaks the standard browser page refresh cycle loop
     e.preventDefault();
+
+    if (!isConfigured) {
+        alert("Configuration Blocked: Open 'app.js' in VS Code and paste your real Google Firebase config object profile keys at line 10!");
+        return;
+    }
+
     const u = document.getElementById("username").value.trim();
     const p = document.getElementById("password").value;
 
@@ -107,7 +117,7 @@ async function processSystemLogin(e) {
                     navigateToScreen("entry");
                 }
             } else {
-                alert("Invalid account credentials! Please verify.");
+                alert("Invalid account credentials profile. Check login name and password.");
             }
         }
     } catch (err) {
@@ -115,55 +125,26 @@ async function processSystemLogin(e) {
     }
 }
 
-
 /* ==========================================================================
-   FIXED AUTHENTICATION LOGIC - PREVENTS LOGIN LOOP
+   OPERATOR INPUT RECORD CAPTURE (RIGHT / LEFT BUTTON PIPELINES)
    ========================================================================== */
-async function processSystemLogin(e) {
-    // 1. Strictly prevent the browser from reloading the page on submit
-    e.preventDefault(); 
-    
-    const u = document.getElementById("username").value.trim();
-    const p = document.getElementById("password").value;
+async function handleRightArrowProcess() {
+    const qp = document.getElementById("entry-qp-code").value.trim().toUpperCase();
+    const ins = document.getElementById("entry-ins-code").value.trim();
+    const countStr = document.getElementById("entry-paper-count").value.trim();
 
-    // Safety check: Alert if API keys are missing before making a network call
-    if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-        alert("Configuration Error: Please paste your actual Google Firebase Keys into app.js before logging in!");
+    if (!qp || !ins || !countStr) {
+        alert("Validation warning: Complete all fields before submitting.");
         return;
     }
 
-    try {
-        // 2. Fetch the secure user directory from Google Firestore
-        const configDoc = await getDoc(doc(db, "system", "config"));
-        
-        if (configDoc.exists()) {
-            const users = configDoc.data().users;
-            
-            // 3. Verify credentials and route to the correct screen layout
-            if (users[u] && users[u] === p) {
-                if (u === "admin") {
-                    currentUserRole = "admin";
-                    navigateToScreen("admin");
-                } else {
-                    currentUserRole = "user";
-                    resetOperatorSession();
-                    navigateToScreen("entry"); // Opens your newly aligned vertical input screen
-                }
-            } else {
-                alert("Invalid account credentials! Please verify username and password.");
-            }
-        } else {
-            alert("Database Error: Global configuration document missing in Firestore.");
-        }
-    } catch (err) {
-        console.error("Login Error Stack:", err);
-        alert("Authentication network link failure: " + err.message + "\n\n(Check if your laptop firewall is blocking Google Firebase or if keys are incorrect.)");
+    if (!sessionQP) {
+        sessionQP = qp;
+        document.getElementById("entry-qp-code").disabled = true;
     }
-}
 
     const count = parseInt(countStr, 10);
 
-    // If operator is actively reviewing history via left arrow, overwrite it directly
     if (sessionIndex < sessionRecords.length - 1) {
         const record = sessionRecords[sessionIndex];
         try {
@@ -183,7 +164,6 @@ async function processSystemLogin(e) {
         return;
     }
 
-    // Check cloud cache instantly for multi-bundle duplication rule exceptions
     if (liveDatabaseCache[sessionQP] && liveDatabaseCache[sessionQP][ins] && liveDatabaseCache[sessionQP][ins].length > 0) {
         triggerDuplicateModalPopup(ins, count);
     } else {
@@ -193,7 +173,7 @@ async function processSystemLogin(e) {
 
 async function commitEntryToCloud(ins, count) {
     const timestamp = getFormattedTimestamp();
-    const uniqueDocId = `${sessionQP}_${ins}_${Date.now()}`; // Prevent hash key collapse
+    const uniqueDocId = `${sessionQP}_${ins}_${Date.now()}`;
 
     const targetPayload = {
         qpCode: sessionQP,
@@ -212,11 +192,10 @@ async function commitEntryToCloud(ins, count) {
     }
 }
 
-// FIXED: Removed the local session block message box entirely
 function handleLeftArrowNavigation() {
     const targetQpInput = document.getElementById("entry-qp-code").value.trim().toUpperCase();
 
-    // Fallback: If no local active history array exists yet but they typed a QP Code, check the live cloud cache structure instead
+    // FIXED: Resolves active session alert context popup issue entirely by querying internal cloud cache registers
     if (sessionRecords.length === 0) {
         if (!targetQpInput) {
             alert("Please enter a CURRENT QP CODE first to pull live history logs.");
@@ -224,18 +203,15 @@ function handleLeftArrowNavigation() {
         }
         
         if (liveDatabaseCache[targetQpInput]) {
-            let totalBundlesFound = 0;
             let summaryMessage = `Live Cloud Logs for QP [${targetQpInput}]:\n\n`;
-            
             for (let insKey in liveDatabaseCache[targetQpInput]) {
                 liveDatabaseCache[targetQpInput][insKey].forEach((b) => {
-                    totalBundlesFound++;
                     summaryMessage += `• Inst ${insKey}: ${b.count} Papers (${b.time})\n`;
                 });
             }
             alert(summaryMessage);
         } else {
-            alert(`No live entries found in the database yet for QP Code: ${targetQpInput}`);
+            alert(`No live database entries found yet for QP Code: ${targetQpInput}`);
         }
         return;
     }
@@ -293,7 +269,6 @@ async function executeDuplicateResolution(choice) {
             alert("Added as an additional separate paper bundle successfully.");
         } 
         else if (choice === "overwrite") {
-            // Overwrite strategy: Purge past instances in cloud collection index array, create new baseline row
             const batch = writeBatch(db);
             liveDatabaseCache[sessionQP][ins].forEach(b => {
                 batch.delete(doc(db, "bundles", b.id));
@@ -325,7 +300,6 @@ async function executeSystemHardReset() {
             const newTitle = prompt("Enter Title String Name for next examination cycle:", "Winter Special Exams 2026");
             if (!newTitle) return;
 
-            // 1. Wipe all data documents inside the bundles collection
             const batch = writeBatch(db);
             for (let qp in liveDatabaseCache) {
                 for (let ins in liveDatabaseCache[qp]) {
@@ -336,7 +310,6 @@ async function executeSystemHardReset() {
             }
             await batch.commit();
 
-            // 2. Update the global exam title string parameter in the cloud configs
             await updateDoc(doc(db, "system", "config"), { examName: newTitle });
             alert("Database purged cleanly. App rebranded successfully!");
             navigateToScreen("admin");
@@ -419,7 +392,6 @@ function activateDrilldownMatrix(qpKey) {
         });
     }
 
-    // MANDATORY REQUIREMENT: Sort records strictly in Ascending Order by paper count
     itemsArray.sort((a, b) => a.count - b.count);
 
     let totalPapersSum = 0;
