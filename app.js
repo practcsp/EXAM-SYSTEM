@@ -15,7 +15,7 @@ const firebaseConfig = {
   storageBucket: "exam-paper-data-system.firebasestorage.app",
   messagingSenderId: "563717623538",
   appId: "1:563717623538:web:bfc99999ea440fc1338a6b"
-}
+};
 
 // Guard Rule: Halt execution if the operator forgot to swap out the API placeholders
 const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
