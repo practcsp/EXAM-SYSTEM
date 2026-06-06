@@ -145,7 +145,8 @@ async function handleRightArrowProcess() {
 
     const count = parseInt(countStr, 10);
 
-    if (sessionIndex < sessionRecords.length - 1) {
+    // FIX 1, 2 & 5: If navigating past history, right arrow UPDATES the record and clears fields.
+    if (sessionIndex >= 0 && sessionIndex < sessionRecords.length) {
         const record = sessionRecords[sessionIndex];
         try {
             const currentTimestamp = getFormattedTimestamp();
@@ -155,15 +156,18 @@ async function handleRightArrowProcess() {
             });
             record.count = count;
             record.time = currentTimestamp;
-            alert("Entry row log record modified successfully!");
+            alert("Data updated successfully!"); // Feedback message
         } catch (e) {
             alert("Cloud write fault: " + e.message);
+            return;
         }
-        sessionIndex = sessionRecords.length - 1;
-        clearEntryInputFields();
+        
+        sessionIndex = sessionRecords.length; // Reset pointer to allow new entries
+        clearEntryInputFields(); // Clears Ins & Count, leaves QP
         return;
     }
 
+    // Checking for duplicates before saving a brand new entry
     if (liveDatabaseCache[sessionQP] && liveDatabaseCache[sessionQP][ins] && liveDatabaseCache[sessionQP][ins].length > 0) {
         triggerDuplicateModalPopup(ins, count);
     } else {
@@ -186,7 +190,9 @@ async function commitEntryToCloud(ins, count) {
         await setDoc(doc(db, "bundles", uniqueDocId), targetPayload);
         sessionRecords.push({ ins: ins, count: count, time: timestamp, docId: uniqueDocId });
         sessionIndex = sessionRecords.length;
-        clearEntryInputFields();
+        
+        alert("Data stored successfully!"); // FIX 5: Success Message
+        clearEntryInputFields();            // FIX 1: Clears Ins & Count, leaves QP
     } catch (err) {
         alert("Cloud transaction rejected: " + err.message);
     }
@@ -195,39 +201,39 @@ async function commitEntryToCloud(ins, count) {
 function handleLeftArrowNavigation() {
     const targetQpInput = document.getElementById("entry-qp-code").value.trim().toUpperCase();
 
-    // FIXED: Resolves active session alert context popup issue entirely by querying internal cloud cache registers
+    // FIX 2: If starting fresh, pull past database entries into the fields for editing!
     if (sessionRecords.length === 0) {
         if (!targetQpInput) {
-            alert("Please enter a CURRENT QP CODE first to pull live history logs.");
+            alert("Please enter a CURRENT QP CODE first to view and edit past data.");
             return;
         }
         
         if (liveDatabaseCache[targetQpInput]) {
-            let summaryMessage = `Live Cloud Logs for QP [${targetQpInput}]:\n\n`;
+            sessionQP = targetQpInput;
+            document.getElementById("entry-qp-code").disabled = true;
+            
+            // Load live history into the navigation tracker
             for (let insKey in liveDatabaseCache[targetQpInput]) {
                 liveDatabaseCache[targetQpInput][insKey].forEach((b) => {
-                    summaryMessage += `• Inst ${insKey}: ${b.count} Papers (${b.time})\n`;
+                    sessionRecords.push({ ins: insKey, count: b.count, time: b.time, docId: b.id });
                 });
             }
-            alert(summaryMessage);
+            sessionIndex = sessionRecords.length; 
         } else {
-            alert(`No live database entries found yet for QP Code: ${targetQpInput}`);
+            alert(`No past database entries found for QP Code: ${targetQpInput}`);
+            return;
         }
-        return;
     }
     
-    if (sessionIndex === sessionRecords.length) {
-        sessionIndex = sessionRecords.length - 1;
-    } else if (sessionIndex > 0) {
+    // Move backwards through the records and populate the editable text boxes
+    if (sessionIndex > 0) {
         sessionIndex--;
+        const targetRecord = sessionRecords[sessionIndex];
+        document.getElementById("entry-ins-code").value = targetRecord.ins;
+        document.getElementById("entry-paper-count").value = targetRecord.count;
     } else {
-        alert("Reached edge boundary of active session registry ledger.");
-        return;
+        alert("This is the oldest record in the batch.");
     }
-
-    const targetRecord = sessionRecords[sessionIndex];
-    document.getElementById("entry-ins-code").value = targetRecord.ins;
-    document.getElementById("entry-paper-count").value = targetRecord.count;
 }
 
 /* ==========================================================================
@@ -266,7 +272,7 @@ async function executeDuplicateResolution(choice) {
             });
             sessionRecords.push({ ins: ins, count: count, time: timestamp, docId: uniqueDocId });
             sessionIndex = sessionRecords.length;
-            alert("Added as an additional separate paper bundle successfully.");
+            alert("Data stored successfully as an additional bundle!"); // FIX 5
         } 
         else if (choice === "overwrite") {
             const batch = writeBatch(db);
@@ -280,15 +286,17 @@ async function executeDuplicateResolution(choice) {
             await batch.commit();
             sessionRecords.push({ ins: ins, count: count, time: timestamp, docId: uniqueDocId });
             sessionIndex = sessionRecords.length;
-            alert("Past entries wiped cleanly. New bundle balance saved.");
+            alert("Past entries cleanly overwritten. Data updated successfully!"); // FIX 5
         }
+        
+        // FIX 3: Ensures the modal hides and screen resets gracefully
+        document.getElementById("duplicate-modal-overlay").classList.add("hidden");
+        clearEntryInputFields(); 
+        pendingDuplicatePayload = null;
+
     } catch(err) {
         alert("Error executing operation: " + err.message);
     }
-
-    document.getElementById("duplicate-modal-overlay").classList.add("hidden");
-    clearEntryInputFields();
-    pendingDuplicatePayload = null;
 }
 
 /* ==========================================================================
@@ -322,24 +330,37 @@ async function executeSystemHardReset() {
 async function createNewOperatorAccount() {
     const u = document.getElementById("new-user-id").value.trim();
     const p = document.getElementById("new-user-pass").value.trim();
+    
     if(u && p) {
         try {
             const configRef = doc(db, "system", "config");
             const configDoc = await getDoc(configRef);
             if (configDoc.exists()) {
                 const currentUsers = configDoc.data().users;
+                
+                // FIX 4: Checks if user already exists to provide exact feedback
+                const isExisting = !!currentUsers[u];
+                
                 currentUsers[u] = p;
                 await updateDoc(configRef, { users: currentUsers });
-                alert(`Operator username profile "${u}" registered to cloud index mapping.`);
+                
+                if (isExisting) {
+                    alert(`Success: Password for existing operator "${u}" has been updated.`);
+                } else {
+                    alert(`Success: New operator account "${u}" has been created.`);
+                }
+                
+                // Clear fields after success
                 document.getElementById("new-user-id").value = "";
                 document.getElementById("new-user-pass").value = "";
             }
         } catch(e) {
             alert("Cloud write failure: " + e.message);
         }
+    } else {
+        alert("Please enter both a username and a password first.");
     }
 }
-
 /* ==========================================================================
    ADMIN DATA GRID & DRILLDOWN UI GENERATORS
    ========================================================================== */
